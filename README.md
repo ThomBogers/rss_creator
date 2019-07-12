@@ -14,7 +14,7 @@ The file named `casts.json`, should have the following content:
         "filename":"foo.m4a",
         "episodename": "foo or bar",
         "author": "bar foo",
-        "created_at": "12/3/2019"
+        "created_at": "2019-07-12 11:59:25"
     }
 ]
 ```
@@ -27,7 +27,6 @@ The file named `meta.json` should have the following content:
     "category": "Business"
 }
 ```
-
 
 ## Validate the feed
 - https://podba.se/validate/

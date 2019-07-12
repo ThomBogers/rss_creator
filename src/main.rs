@@ -8,6 +8,7 @@ use serde::Serialize;
 use serde::Deserialize;
 use serde_json;
 
+
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 struct Cast {
@@ -67,9 +68,10 @@ fn write_feed(feed: &str) {
 fn get_feed_item(cast: Cast) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
 
-    let file_size = fs::metadata(format!("./data/{}", cast.filename))
-        .expect(&format!("Could not open file ./data/{}", cast.filename))
-        .len();
+    let file_meta = fs::metadata(format!("./data/{}", cast.filename))
+        .expect(&format!("Could not open file ./data/{}", cast.filename));
+
+    let file_size = file_meta.len();
 
     let enclosure = rss::EnclosureBuilder::default()
         .url(format!("{}/casts/{}", get_metadata().url, cast.filename))
@@ -87,6 +89,7 @@ fn get_feed_item(cast: Cast) -> rss::Item {
         .link(format!("{}/casts/{}", get_metadata().url, cast.filename))
         .title(cast.episodename)
         .author(cast.author)
+        .pub_date(cast.created_at)
         .enclosure(enclosure)
         .categories(categories)
         .build()
