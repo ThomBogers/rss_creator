@@ -1,4 +1,6 @@
 use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
 
 use rss;
 
@@ -15,6 +17,13 @@ struct Cast {
     created_at: String
 }
 
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
+struct Metadata {
+    url: String,
+    category: String,
+}
+
 fn main() {
     println!("Start rss builder!");
 
@@ -29,7 +38,7 @@ fn main() {
 
     let mut channel = rss::ChannelBuilder::default()
         .title("Ksyos kennis sessies")
-        .link("http://ksyos.nl/")
+        .link(get_metadata().url)
         .description("An RSS feed.")
         .build()
         .unwrap();
@@ -45,30 +54,49 @@ fn main() {
 
     channel.set_items(items);
     let xml = channel.to_string();
+    write_feed(&xml);
     println!("Result:\n{}", xml);
+}
+
+fn write_feed(feed: &str) {
+    let mut f = File::create("./data/rss.xml").unwrap();
+    write!(f, "{}", feed).unwrap();
+    f.sync_all().unwrap();
 }
 
 fn get_feed_item(cast: Cast) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
 
+    let file_size = fs::metadata(format!("./data/{}", cast.filename))
+        .expect(&format!("Could not open file ./data/{}", cast.filename))
+        .len();
+
     let enclosure = rss::EnclosureBuilder::default()
-        .url(format!("http://ksyos.nl/casts/{}", cast.episodename))
-        .length("123") //TODO: calculate this
+        .url(format!("{}/casts/{}", get_metadata().url, cast.filename))
+        .length(format!("{}", file_size))
         .mime_type("m4a")
         .build()
         .unwrap();
 
     let mut category = rss::Category::default();
-    category.set_name("Business"); // TODO: add meta/feed.json file?
+    category.set_name(get_metadata().category);
 
     let categories = vec!(category);
 
     rss::ItemBuilder::default()
-        .link(format!("http://ksyos.nl/casts/{}", cast.episodename))
+        .link(format!("{}/casts/{}", get_metadata().url, cast.filename))
         .title(cast.episodename)
         .author(cast.author)
         .enclosure(enclosure)
         .categories(categories)
         .build()
         .unwrap()
+}
+
+fn get_metadata() -> Metadata{
+    let file = fs::File::open("./data/meta.json")
+        .expect("file should open read only");
+    
+    let meta: Metadata = serde_json::from_reader(file).expect("Could not parse metadata");
+    meta
 }
