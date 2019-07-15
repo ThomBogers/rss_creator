@@ -2,6 +2,8 @@
 
 ## todo
 - Remove all instances of unwrap
+- Fix streaming by enabling content_disposition,accept_ranges,206
+- Add nginx template when it is fully working
 
 ## Data format
 A dir named `data` containing a file named `casts.json`, `meta.json` and the cast files

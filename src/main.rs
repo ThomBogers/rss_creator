@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use rss;
+use rss::extension::itunes::ITunesChannelExtension;
 
 use serde::Serialize;
 use serde::Deserialize;
@@ -22,7 +23,12 @@ struct Cast {
 #[derive(Debug)]
 struct Metadata {
     url: String,
+    namespace: String,
     category: String,
+    title: String,
+    description: String,
+    author: String,
+    api_key: String,
 }
 
 fn main() {
@@ -37,10 +43,16 @@ fn main() {
     let data = json.as_array()
         .expect("file should contain JSON array");
 
+    let mut itunes_extension = ITunesChannelExtension::default();
+    itunes_extension.set_author(get_metadata().author);
+    itunes_extension.set_image(get_data_link(&format!("{}.png", get_metadata().namespace), false));
+
+
     let mut channel = rss::ChannelBuilder::default()
-        .title("Ksyos kennis sessies")
-        .link(get_metadata().url)
-        .description("An RSS feed.")
+        .title(get_metadata().title)
+        .description(get_metadata().description)
+        .link(get_data_link(&format!("{}.xml", get_metadata().namespace), false))
+        .itunes_ext(itunes_extension)
         .build()
         .unwrap();
     
@@ -60,9 +72,30 @@ fn main() {
 }
 
 fn write_feed(feed: &str) {
-    let mut f = File::create("./data/rss.xml").unwrap();
+    let mut f = File::create("./data/rss.xml")
+        .expect("Could not create rss.xml");
+
     write!(f, "{}", feed).unwrap();
     f.sync_all().unwrap();
+}
+
+fn get_data_link(filename: &str, namespaced: bool) -> String{
+    let api_key = get_metadata().api_key;
+
+    let url = if namespaced {
+        format!("{}/{}", get_metadata().url, get_metadata().namespace)
+    } else {
+        get_metadata().url
+    };
+
+
+    let link = if api_key.len() > 0 {
+        format!("{}/{}?auth={}", url, filename, get_metadata().api_key)
+    } else {
+        format!("{}/{}", url, filename)
+    };
+
+    return link;
 }
 
 fn get_feed_item(cast: Cast) -> rss::Item {
@@ -74,7 +107,7 @@ fn get_feed_item(cast: Cast) -> rss::Item {
     let file_size = file_meta.len();
 
     let enclosure = rss::EnclosureBuilder::default()
-        .url(format!("{}/casts/{}", get_metadata().url, cast.filename))
+        .url(get_data_link(&cast.filename, true))
         .length(format!("{}", file_size))
         .mime_type("m4a")
         .build()
@@ -86,7 +119,7 @@ fn get_feed_item(cast: Cast) -> rss::Item {
     let categories = vec!(category);
 
     rss::ItemBuilder::default()
-        .link(format!("{}/casts/{}", get_metadata().url, cast.filename))
+        .link(get_data_link(&cast.filename, true))
         .title(cast.episodename)
         .author(cast.author)
         .pub_date(cast.created_at)
