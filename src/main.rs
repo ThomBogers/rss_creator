@@ -29,10 +29,11 @@ struct Metadata {
     description: String,
     author: String,
     api_key: String,
+    hide_from_store: bool,
 }
 
 fn main() {
-    println!("Start rss builder!");
+    println!("Starting rss builder!");
 
     let casts = get_castdata();
     let feed_items: Vec<rss::Item> = casts
@@ -75,6 +76,7 @@ fn get_data_link(filename: &str, namespaced: bool) -> String{
 
 fn get_feed_item(cast: &Cast) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
+    let metadata = get_metadata();
 
     let file_meta = fs::metadata(format!("./data/{}", cast.filename))
         .expect(&format!("Could not open file ./data/{}", cast.filename));
@@ -89,7 +91,7 @@ fn get_feed_item(cast: &Cast) -> rss::Item {
         .unwrap();
 
     let mut category = rss::Category::default();
-    category.set_name(get_metadata().category);
+    category.set_name(metadata.category);
 
     let categories = vec!(category);
 
@@ -110,6 +112,7 @@ fn get_channel() -> rss::Channel {
     let mut itunes_extension = ITunesChannelExtension::default();
     itunes_extension.set_author(metadata.author);
     itunes_extension.set_image(get_data_link(&format!("{}.png", metadata.namespace), false));
+    itunes_extension.set_block( if metadata.hide_from_store {"Yes".to_string()} else {"".to_string()});
 
     rss::ChannelBuilder::default()
         .title(metadata.title)
