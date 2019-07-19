@@ -33,3 +33,4 @@ The file named `meta.json` should have the following content:
 ## Validate the feed
 - https://podba.se/validate/
 - http://castfeedvalidator.com/find
+- https://validator.w3.org/feed/check.cgi

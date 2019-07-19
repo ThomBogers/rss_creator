@@ -3,12 +3,13 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use rss;
-use rss::extension::itunes::ITunesChannelExtension;
+use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
 
 use serde::Serialize;
 use serde::Deserialize;
 use serde_json;
 
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
@@ -25,10 +26,13 @@ struct Metadata {
     url: String,
     namespace: String,
     category: String,
+    language: String,
     title: String,
     description: String,
     author: String,
+    email: String,
     api_key: String,
+    explicit: bool,
     hide_from_store: bool,
 }
 
@@ -76,7 +80,6 @@ fn get_data_link(filename: &str, namespaced: bool) -> String{
 
 fn get_feed_item(cast: &Cast) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
-    let metadata = get_metadata();
 
     let file_meta = fs::metadata(format!("./data/{}", cast.filename))
         .expect(&format!("Could not open file ./data/{}", cast.filename));
@@ -86,14 +89,9 @@ fn get_feed_item(cast: &Cast) -> rss::Item {
     let enclosure = rss::EnclosureBuilder::default()
         .url(get_data_link(&cast.filename, true))
         .length(format!("{}", file_size))
-        .mime_type("m4a")
+        .mime_type("audio/mpeg")
         .build()
         .unwrap();
-
-    let mut category = rss::Category::default();
-    category.set_name(metadata.category);
-
-    let categories = vec!(category);
 
     rss::ItemBuilder::default()
         .link(get_data_link(&cast.filename, true))
@@ -101,7 +99,8 @@ fn get_feed_item(cast: &Cast) -> rss::Item {
         .author(cast.author.clone())
         .pub_date(cast.created_at.clone())
         .enclosure(enclosure)
-        .categories(categories)
+        .itunes_ext(rss::extension::itunes::ITunesItemExtension::default())
+        .dublin_core_ext(rss::extension::dublincore::DublinCoreExtension::default())
         .build()
         .unwrap()
 }
@@ -110,15 +109,32 @@ fn get_channel() -> rss::Channel {
     let metadata = get_metadata();
 
     let mut itunes_extension = ITunesChannelExtension::default();
-    itunes_extension.set_author(metadata.author);
+    itunes_extension.set_author(format!("{}", metadata.author));
     itunes_extension.set_image(get_data_link(&format!("{}.png", metadata.namespace), false));
     itunes_extension.set_block( if metadata.hide_from_store {"Yes".to_string()} else {"".to_string()});
+    itunes_extension.set_explicit( if metadata.explicit {"Yes".to_string()} else {"No".to_string()});
 
+    let category = rss::extension::itunes::ITunesCategoryBuilder::default()
+        .text(metadata.category)
+        .build()
+        .expect("should be a valid itunes category");
+    itunes_extension.set_categories(vec!(category));
+
+    let mut owner = ITunesOwner::default();
+    owner.set_name(format!("{}", metadata.author));
+    owner.set_email(format!("{}", metadata.email));
+    itunes_extension.set_owner(owner);
+
+    let mut namespaces: HashMap<String, String> = HashMap::new();
+    namespaces.insert("itunes".to_string(), "http://www.itunes.com/dtds/podcast-1.0.dtd".to_string());
+    
     rss::ChannelBuilder::default()
         .title(metadata.title)
         .description(metadata.description)
         .link(get_data_link(&format!("{}.xml", metadata.namespace), false))
         .itunes_ext(itunes_extension)
+        .namespaces(namespaces)
+        .language(metadata.language)
         .build()
         .unwrap()
 }
