@@ -18,12 +18,27 @@ use std::process::Command;
 
 use rss_creator::{FeedItem, Cast};
 
+use structopt::StructOpt;
+
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 struct Metadata {
     channel_id: String,
     limit: usize
 }
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "get_data", about = "Download files from a youtube channel, to use when creating a podcast feed")]
+struct Options {
+    /// Location to read/write config files
+    #[structopt(short = "c", long = "config", default_value = "./conf")]
+    config_dir: String,
+
+    /// Location to write data files
+    #[structopt(short = "d", long = "data", default_value = "./data")]
+    data_dir: String
+}
+
 
 fn main() {
     println!("Starting data retrieval");
@@ -61,7 +76,8 @@ fn main() {
 }
 
 fn write_casts(casts: &str) {
-    let mut f = File::create("./data/casts.json")
+    let options = Options::from_args();
+    let mut f = File::create(format!("{}/casts.json", options.config_dir))
         .expect("Could not create casts.json");
 
     write!(f, "{}", casts).unwrap();
@@ -80,6 +96,7 @@ fn feed_item_to_cast(item: &FeedItem) -> Cast {
 
 fn get_feed_audio(item: &FeedItem) -> Result<(), i32> {
     println!("Downloading id: {}", item.id);
+    let options = Options::from_args();
 
     let output = Command::new("youtube-dl")
         .arg("--extract-audio")
@@ -88,7 +105,7 @@ fn get_feed_audio(item: &FeedItem) -> Result<(), i32> {
         .arg("--audio-quality")
         .arg("9")
         .arg("--output")
-        .arg(format!("./data/{}.%(ext)s",item.id))
+        .arg(format!("{}/{}.%(ext)s",options.data_dir, item.id))
         .arg(&item.link)
         .output()
         .expect("Failed to download the file");
@@ -106,7 +123,8 @@ fn get_feed_audio(item: &FeedItem) -> Result<(), i32> {
 }
 
 fn get_cast_data() -> Vec<Cast> {
-    let file = match fs::File::open("./data/casts.json") {
+    let options = Options::from_args();
+    let file = match fs::File::open(format!("{}/casts.json", options.config_dir)) {
         Ok(value) => value,
         Err(_) => return vec!()
     };
@@ -181,7 +199,9 @@ fn get_feed_url() -> std::string::String {
 }
 
 fn get_metadata() -> Metadata{
-    let file = fs::File::open("./data/channel.json")
+    let options = Options::from_args();
+
+    let file = fs::File::open(format!("{}/channel.json", options.config_dir))
         .expect("file should open read only");
     
     let meta: Metadata = serde_json::from_reader(file)
