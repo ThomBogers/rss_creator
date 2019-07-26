@@ -1,12 +1,19 @@
 [package]
-name = "rss_create"
+name = "rss_creator"
 version = "0.1.0"
 authors = ["Thom Bogers <thom.bogers@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "rss_creator"
+path = "src/lib.rs"
+
 [dependencies]
 rss = "1.8.0"
 serde_json = "1.0.40"
 serde = { version = "1.0", features = ["derive"] }
+atom_syndication = "0.6.0"
+reqwest = "0.9.19"
+regex = "1.2.0"

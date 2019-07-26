@@ -11,14 +11,7 @@ use serde_json;
 
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-struct Cast {
-    filename: String,
-    episodename: String,
-    author: String,
-    created_at: String
-}
+use rss_creator::{Cast};
 
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
@@ -39,7 +32,7 @@ struct Metadata {
 fn main() {
     println!("Starting rss builder!");
 
-    let casts = get_castdata();
+    let casts = get_cast_data();
     let feed_items: Vec<rss::Item> = casts
         .iter()
         .map(get_feed_item)
@@ -50,7 +43,7 @@ fn main() {
 
     let xml = channel.to_string();
     write_feed(&xml);
-    println!("Result:\n{}", xml);
+    println!("Done");
 }
 
 fn write_feed(feed: &str) {
@@ -95,7 +88,7 @@ fn get_feed_item(cast: &Cast) -> rss::Item {
 
     rss::ItemBuilder::default()
         .link(get_data_link(&cast.filename, true))
-        .title(cast.episodename.clone())
+        .title(cast.title.clone())
         .author(cast.author.clone())
         .pub_date(cast.created_at.clone())
         .enclosure(enclosure)
@@ -139,7 +132,7 @@ fn get_channel() -> rss::Channel {
         .unwrap()
 }
 
-fn get_castdata() -> Vec<Cast> {
+fn get_cast_data() -> Vec<Cast> {
 
     let file = fs::File::open("./data/casts.json")
         .expect("casts file should open read only");
@@ -159,7 +152,7 @@ fn get_castdata() -> Vec<Cast> {
 }
 
 fn get_metadata() -> Metadata{
-    let file = fs::File::open("./data/meta.json")
+    let file = fs::File::open("./data/feed.json")
         .expect("file should open read only");
     
     let meta: Metadata = serde_json::from_reader(file)

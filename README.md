@@ -1,34 +1,47 @@
 # Rss feed creator based on files with metadata in json
 
 ## todo
-- Remove all instances of unwrap
-- Fix streaming by enabling content_disposition,accept_ranges,206
-- Add nginx template when it is fully working
+- Nginx
+  - Fix streaming by enabling content_disposition,accept_ranges,206
+  - Add nginx template when it is fully working
+- Common
+  - Try to use basic auth, and use user:pass@url in feed
+  - Output all data to dir `./data/<namespace>`
+  - Use getters/setters for structs?
+- get_data
+  - filter doesn't seem to fully work
 
 ## Data format
-A dir named `data` containing a file named `casts.json`, `meta.json` and the cast files
+A dir named `data` containing a file named `channel.json` and `feed.json`
 
-The file named `casts.json`, should have the following content:
-
-```json
-[
-    {
-        "filename":"foo.m4a",
-        "episodename": "foo or bar",
-        "author": "bar foo",
-        "created_at": "2019-07-12 11:59:25"
-    }
-]
-```
-
-The file named `meta.json` should have the following content:
+The file name `channel.json` should have the content:
 
 ```json
 {
-    "url": "http://casts.com",
-    "category": "Business"
+    "channel_id": ""
 }
 ```
+
+The file named `feed.json` should have the following content:
+
+```json
+{
+    {
+    "url": "https://casts.com",
+    "namespace": "mybussines",
+    "category": "Business",
+    "language": "nl",
+    "title": "mybussines - the podcasts",
+    "description": "a feed for podcasts pertaining to mybussines",
+    "author": "Me",
+    "email": "me@mybussines.com",
+    "api_key": "secret",  
+    "hide_from_store": true,
+    "explicit": false
+}
+}
+```
+
 
 ## Validate the feed
 - https://podba.se/validate/
