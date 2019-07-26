@@ -21,11 +21,13 @@ use rss_creator::{FeedItem, Cast};
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
 struct Metadata {
-    channel_id: String
+    channel_id: String,
+    limit: usize
 }
 
 fn main() {
     println!("Starting data retrieval");
+    let metadata = get_metadata();
 
     let url = get_feed_url();
     let feed = get_feed_data(&url);
@@ -33,6 +35,7 @@ fn main() {
 
     let feed: Vec<FeedItem> = feed
         .into_iter()
+        .take(metadata.limit)
         .filter(|item| {
             let res = casts
                 .iter()
@@ -107,7 +110,6 @@ fn get_cast_data() -> Vec<Cast> {
         Ok(value) => value,
         Err(_) => return vec!()
     };
-        // .expect("casts file should open read only");
 
     let json: serde_json::Value = serde_json::from_reader(file)
         .expect("casts file should be proper JSON");

@@ -18,7 +18,8 @@ The file name `channel.json` should have the content:
 
 ```json
 {
-    "channel_id": ""
+    "channel_id": "as25Agb123",
+    "limit": 5
 }
 ```
 
@@ -26,7 +27,6 @@ The file named `feed.json` should have the following content:
 
 ```json
 {
-    {
     "url": "https://casts.com",
     "namespace": "mybussines",
     "category": "Business",
@@ -38,7 +38,6 @@ The file named `feed.json` should have the following content:
     "api_key": "secret",  
     "hide_from_store": true,
     "explicit": false
-}
 }
 ```
 
