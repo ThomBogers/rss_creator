@@ -1,20 +1,12 @@
 use serde::{Serialize, Deserialize};
 
 use structopt::StructOpt;
+pub mod channel;
+pub mod feed;
 
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
-pub struct FeedItem {
-    pub id: String,
-    pub author: String,
-    pub title: String,
-    pub link: String,
-    pub created_at: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-pub struct Cast {
+pub struct CastItem {
     pub id: String,
     pub author: String,
     pub title: String,
@@ -22,9 +14,9 @@ pub struct Cast {
     pub created_at: String
 }
 
-impl Cast {
-    pub fn from_feed_item(item: &FeedItem) -> Cast {
-        Cast{
+impl CastItem {
+    pub fn from_feed_item(item: &feed::FeedItem) -> CastItem {
+        CastItem{
                 author: item.author.to_string(), 
                 created_at: item.created_at.to_string(), 
                 title: item.title.to_string(), 

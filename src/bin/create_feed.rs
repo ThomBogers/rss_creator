@@ -9,7 +9,7 @@ use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use rss_creator::{Cast ,Options};
+use rss_creator::{CastItem ,Options};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -72,7 +72,7 @@ fn get_data_link(filename: &str, namespaced: bool) -> String{
     }
 }
 
-fn get_feed_item(cast: &Cast) -> rss::Item {
+fn get_feed_item(cast: &CastItem) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
     let options = Options::from_args();
 
@@ -134,7 +134,7 @@ fn get_channel() -> rss::Channel {
         .unwrap()
 }
 
-fn get_cast_data() -> Vec<Cast> {
+fn get_cast_data() -> Vec<CastItem> {
     let options = Options::from_args();
 
     let file = fs::File::open(format!("{}/casts.json", options.config_dir))
@@ -147,7 +147,7 @@ fn get_cast_data() -> Vec<Cast> {
         .expect("casts file should contain JSON array")
         .iter()
         .map(|data| {
-            let cast: Cast = serde_json::from_value(data.clone())
+            let cast: CastItem = serde_json::from_value(data.clone())
                 .expect("cast item should be in correct format");
             cast
         })

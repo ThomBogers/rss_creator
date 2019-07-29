@@ -1,20 +1,12 @@
 use std::{
     fs, 
     io::prelude::*, 
-    process::Command,
-    str::FromStr,
 };
-
-use regex::Regex;
-
-use atom_syndication::Feed;
 
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use reqwest;
-
-use rss_creator::{FeedItem, Cast ,Options};
+use rss_creator::{channel::Channel, feed::{Feed, FeedItem}, CastItem ,Options};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -24,17 +16,18 @@ struct Metadata {
     limit: usize
 }
 
-const YOUTUBE_FEED_URL: &str = "https://www.youtube.com/feeds/videos.xml?channel_id=";
-
 fn main() {
     println!("Starting data retrieval");
+    let options = Options::from_args();
     let metadata = get_metadata();
 
-    let url = get_feed_url();
-    let feed = get_feed_data(&url);
+    let channel = Channel::from_string(&metadata.channel_id);
+    let feed     = Feed::from_channel(&channel);
+
     let mut casts = get_cast_data();
 
     let feed: Vec<FeedItem> = feed
+        .items
         .into_iter()
         .take(metadata.limit)
         .filter(|item| {
@@ -49,9 +42,9 @@ fn main() {
     feed
         .iter()
         .for_each(|item| {
-            get_feed_audio(item)
+            item.get_audio(&options.data_dir)
                 .expect("Should be able to download the file");
-            casts.push(Cast::from_feed_item(item));
+            casts.push(CastItem::from_feed_item(item));
         });
 
     let json = serde_json::to_string_pretty(&casts)
@@ -70,35 +63,7 @@ fn write_casts(casts: &str) {
     f.sync_all().unwrap();
 }
 
-fn get_feed_audio(item: &FeedItem) -> Result<(), i32> {
-    println!("Downloading id: {}", item.id);
-    let options = Options::from_args();
-
-    let output = Command::new("youtube-dl")
-        .arg("--extract-audio")
-        .arg("--audio-format")
-        .arg("m4a")
-        .arg("--audio-quality")
-        .arg("9")
-        .arg("--output")
-        .arg(format!("{}/{}.%(ext)s",options.data_dir, item.id))
-        .arg(&item.link)
-        .output()
-        .expect("Failed to download the file");
-
-    // let output = Command::new("echo")
-    //     .arg(&item.id)
-    //     .output()
-    //     .expect("Failed echo");
-
-    match output.status.code() {
-        Some(0) => Ok(()),
-        Some(n) => Err(n),
-        None => Err(-1)
-    }
-}
-
-fn get_cast_data() -> Vec<Cast> {
+fn get_cast_data() -> Vec<CastItem> {
     let options = Options::from_args();
     let file = match fs::File::open(format!("{}/casts.json", options.config_dir)) {
         Ok(value) => value,
@@ -112,66 +77,11 @@ fn get_cast_data() -> Vec<Cast> {
         .expect("casts file should contain JSON array")
         .iter()
         .map(|data| {
-            let cast: Cast = serde_json::from_value(data.clone())
+            let cast: CastItem = serde_json::from_value(data.clone())
                 .expect("cast item should be in correct format");
             cast
         })
         .collect()
-}
-
-fn get_feed_data(url: &str) -> Vec<FeedItem> {
-    let data = reqwest::get(url)
-        .unwrap()
-        .text()
-        .expect("The feed for the channel should be possible to download");
-
-    let feed = Feed::from_str(&data)
-        .expect("The feed should be parsable as a atom feed");
-
-    feed
-        .entries()
-        .iter()
-        .map(|item| {
-            let title = item
-                .title()
-                .to_string();
-
-            let author = item
-                .authors()[0]
-                .name()
-                .to_string();
-            
-            let link = item
-                .links()[0]
-                .href()
-                .to_string();
-            
-            let created_at = match item.published() {
-                Some(date) => date,
-                None => ""
-            }.to_string();
-
-            let id = get_id_from_url(&link)
-                .to_string();
-
-            FeedItem{title, author, link, created_at, id}
-        })
-        .collect()
-}
-
-fn get_id_from_url(url: &str) -> &str {
-    Regex::new(r"\?v=(.*)")
-        .unwrap()
-        .captures(url)
-        .expect("FeedItem url should match ?v=<id> pattern")
-        .get(1)
-        .expect("FeedItem url should match ?v=<id> pattern")
-        .as_str()
-}
-
-fn get_feed_url() -> std::string::String {
-    let metadata = get_metadata();
-    format!("{}{}", YOUTUBE_FEED_URL, metadata.channel_id)
 }
 
 fn get_metadata() -> Metadata{
