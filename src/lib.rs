@@ -22,6 +22,19 @@ pub struct Cast {
     pub created_at: String
 }
 
+impl Cast {
+    pub fn from_feed_item(item: &FeedItem) -> Cast {
+        Cast{
+                author: item.author.to_string(), 
+                created_at: item.created_at.to_string(), 
+                title: item.title.to_string(), 
+                filename: format!("{}.m4a", item.id),
+                id: item.id.to_string()
+            }
+    }
+}
+
+
 #[derive(StructOpt, Debug)]
 #[structopt(name = "rss_creator", about = "Create a podcast rss feed based on a youtube channe")]
 pub struct Options {

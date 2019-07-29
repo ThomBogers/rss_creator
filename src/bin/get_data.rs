@@ -51,7 +51,7 @@ fn main() {
         .for_each(|item| {
             get_feed_audio(item)
                 .expect("Should be able to download the file");
-            casts.push(feed_item_to_cast(item));
+            casts.push(Cast::from_feed_item(item));
         });
 
     let json = serde_json::to_string_pretty(&casts)
@@ -68,16 +68,6 @@ fn write_casts(casts: &str) {
 
     write!(f, "{}", casts).unwrap();
     f.sync_all().unwrap();
-}
-
-fn feed_item_to_cast(item: &FeedItem) -> Cast {
-    Cast{
-        author: item.author.to_string(), 
-        created_at: item.created_at.to_string(), 
-        title: item.title.to_string(), 
-        filename: format!("{}.m4a", item.id),
-        id: item.id.to_string()
-    }
 }
 
 fn get_feed_audio(item: &FeedItem) -> Result<(), i32> {
