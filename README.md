@@ -6,7 +6,6 @@
   - Add nginx template when it is fully working
 - Common
   - Try to use basic auth, and use user:pass@url in feed
-  - Add args for config location, file location, and feed location
   - Use getters/setters for structs?
   - Find out how to set 'global' values for file
     - https://crates.io/crates/lazy_static

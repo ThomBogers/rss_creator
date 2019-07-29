@@ -11,7 +11,8 @@ use serde_json;
 
 use std::collections::HashMap;
 
-use rss_creator::{Cast};
+use rss_creator::{Cast ,Options};
+use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
 #[derive(Debug)]
@@ -47,7 +48,9 @@ fn main() {
 }
 
 fn write_feed(feed: &str) {
-    let mut f = File::create("./data/rss.xml")
+    let options = Options::from_args();
+    
+    let mut f = File::create(format!("{}/rss.xml", options.feed_dir))
         .expect("Could not create rss.xml");
 
     write!(f, "{}", feed).unwrap();
@@ -73,9 +76,10 @@ fn get_data_link(filename: &str, namespaced: bool) -> String{
 
 fn get_feed_item(cast: &Cast) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
+    let options = Options::from_args();
 
-    let file_meta = fs::metadata(format!("./data/{}", cast.filename))
-        .expect(&format!("Could not open file ./data/{}", cast.filename));
+    let file_meta = fs::metadata(format!("{}/{}", options.data_dir, cast.filename))
+        .expect(&format!("Could not open file {}/{}", options.data_dir, cast.filename));
 
     let file_size = file_meta.len();
 
@@ -133,8 +137,9 @@ fn get_channel() -> rss::Channel {
 }
 
 fn get_cast_data() -> Vec<Cast> {
+    let options = Options::from_args();
 
-    let file = fs::File::open("./data/casts.json")
+    let file = fs::File::open(format!("{}/casts.json", options.config_dir))
         .expect("casts file should open read only");
 
     let json: serde_json::Value = serde_json::from_reader(file)
@@ -152,7 +157,8 @@ fn get_cast_data() -> Vec<Cast> {
 }
 
 fn get_metadata() -> Metadata{
-    let file = fs::File::open("./data/feed.json")
+    let options = Options::from_args();
+    let file = fs::File::open(format!("{}/feed.json", options.config_dir))
         .expect("file should open read only");
     
     let meta: Metadata = serde_json::from_reader(file)

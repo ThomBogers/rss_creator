@@ -16,8 +16,7 @@ use reqwest;
 
 use std::process::Command;
 
-use rss_creator::{FeedItem, Cast};
-
+use rss_creator::{FeedItem, Cast ,Options};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -26,19 +25,6 @@ struct Metadata {
     channel_id: String,
     limit: usize
 }
-
-#[derive(StructOpt, Debug)]
-#[structopt(name = "get_data", about = "Download files from a youtube channel, to use when creating a podcast feed")]
-struct Options {
-    /// Location to read/write config files
-    #[structopt(short = "c", long = "config", default_value = "./conf")]
-    config_dir: String,
-
-    /// Location to write data files
-    #[structopt(short = "d", long = "data", default_value = "./data")]
-    data_dir: String
-}
-
 
 fn main() {
     println!("Starting data retrieval");
