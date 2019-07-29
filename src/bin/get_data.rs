@@ -1,20 +1,18 @@
-use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
+use std::{
+    fs, 
+    io::prelude::*, 
+    process::Command,
+    str::FromStr,
+};
 
 use regex::Regex;
 
-use std::str::FromStr;
-
 use atom_syndication::Feed;
 
-use serde::Serialize;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use serde_json;
 
 use reqwest;
-
-use std::process::Command;
 
 use rss_creator::{FeedItem, Cast ,Options};
 use structopt::StructOpt;
@@ -25,6 +23,8 @@ struct Metadata {
     channel_id: String,
     limit: usize
 }
+
+const YOUTUBE_FEED_URL: &str = "https://www.youtube.com/feeds/videos.xml?channel_id=";
 
 fn main() {
     println!("Starting data retrieval");
@@ -63,7 +63,7 @@ fn main() {
 
 fn write_casts(casts: &str) {
     let options = Options::from_args();
-    let mut f = File::create(format!("{}/casts.json", options.config_dir))
+    let mut f = fs::File::create(format!("{}/casts.json", options.config_dir))
         .expect("Could not create casts.json");
 
     write!(f, "{}", casts).unwrap();
@@ -181,7 +181,7 @@ fn get_id_from_url(url: &str) -> &str {
 
 fn get_feed_url() -> std::string::String {
     let metadata = get_metadata();
-    format!("https://www.youtube.com/feeds/videos.xml?channel_id={}", metadata.channel_id)
+    format!("{}{}", YOUTUBE_FEED_URL, metadata.channel_id)
 }
 
 fn get_metadata() -> Metadata{

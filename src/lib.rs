@@ -1,5 +1,4 @@
-use serde::Serialize;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 use structopt::StructOpt;
 

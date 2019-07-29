@@ -1,15 +1,13 @@
-use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
+use std::{
+    collections::HashMap,
+    fs, 
+    io::prelude::*, 
+};
 
-use rss;
 use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
 
-use serde::Serialize;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use serde_json;
-
-use std::collections::HashMap;
 
 use rss_creator::{Cast ,Options};
 use structopt::StructOpt;
@@ -50,7 +48,7 @@ fn main() {
 fn write_feed(feed: &str) {
     let options = Options::from_args();
     
-    let mut f = File::create(format!("{}/rss.xml", options.feed_dir))
+    let mut f = fs::File::create(format!("{}/rss.xml", options.feed_dir))
         .expect("Could not create rss.xml");
 
     write!(f, "{}", feed).unwrap();
