@@ -1,12 +1,9 @@
-use std::{
-    fs, 
-    io::prelude::*, 
-};
+use std::fs;
 
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use rss_creator::{channel::Channel, feed::{Feed, FeedItem}, CastItem ,Options};
+use rss_creator::{channel::Channel, feed::{Feed, FeedItem}, cast::{Cast, CastItem} ,Options};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -22,9 +19,10 @@ fn main() {
     let metadata = get_metadata();
 
     let channel = Channel::from_string(&metadata.channel_id);
-    let feed     = Feed::from_channel(&channel);
+    let feed    = Feed::from_channel(&channel);
 
-    let mut casts = get_cast_data();
+    let mut cast = Cast::from_file(&format!("{}/casts.json", options.config_dir));
+    let mut casts = cast.items();
 
     let feed: Vec<FeedItem> = feed
         .items
@@ -47,41 +45,9 @@ fn main() {
             casts.push(CastItem::from_feed_item(item));
         });
 
-    let json = serde_json::to_string_pretty(&casts)
-        .unwrap();
-    write_casts(&json);
-
+    cast.set_items(casts);
+    cast.write(&format!("{}/casts.json", options.config_dir));
     println!("Done");
-}
-
-fn write_casts(casts: &str) {
-    let options = Options::from_args();
-    let mut f = fs::File::create(format!("{}/casts.json", options.config_dir))
-        .expect("Could not create casts.json");
-
-    write!(f, "{}", casts).unwrap();
-    f.sync_all().unwrap();
-}
-
-fn get_cast_data() -> Vec<CastItem> {
-    let options = Options::from_args();
-    let file = match fs::File::open(format!("{}/casts.json", options.config_dir)) {
-        Ok(value) => value,
-        Err(_) => return vec!()
-    };
-
-    let json: serde_json::Value = serde_json::from_reader(file)
-        .expect("casts file should be proper JSON");
-    
-    json.as_array()
-        .expect("casts file should contain JSON array")
-        .iter()
-        .map(|data| {
-            let cast: CastItem = serde_json::from_value(data.clone())
-                .expect("cast item should be in correct format");
-            cast
-        })
-        .collect()
 }
 
 fn get_metadata() -> Metadata{

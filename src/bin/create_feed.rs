@@ -9,7 +9,7 @@ use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use rss_creator::{CastItem ,Options};
+use rss_creator::{cast::CastItem ,Options};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
