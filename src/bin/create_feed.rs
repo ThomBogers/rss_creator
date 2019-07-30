@@ -9,7 +9,7 @@ use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
 use serde::{Serialize, Deserialize};
 use serde_json;
 
-use rss_creator::{cast::CastItem ,Options};
+use rss_creator::{cast::{CastItem, Cast} ,Options};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -29,29 +29,32 @@ struct Metadata {
 }
 
 fn main() {
+    let options = Options::from_args();
     println!("Starting rss builder!");
 
-    let casts = get_cast_data();
-    let feed_items: Vec<rss::Item> = casts
+    let cast = Cast::from_file(&format!("{}/casts.json", options.config_dir));
+    let casts = cast.items();
+
+    let rss_items: Vec<rss::Item> = casts
         .iter()
-        .map(get_feed_item)
+        .map(get_rss_item)
         .collect();
 
-    let mut channel = get_channel();
-    channel.set_items(feed_items);
+    let mut rss = get_rss();
+    rss.set_items(rss_items);
 
-    let xml = channel.to_string();
-    write_feed(&xml);
+    let xml = rss.to_string();
+    write_rss(&xml);
     println!("Done");
 }
 
-fn write_feed(feed: &str) {
+fn write_rss(rss: &str) {
     let options = Options::from_args();
     
     let mut f = fs::File::create(format!("{}/rss.xml", options.feed_dir))
         .expect("Could not create rss.xml");
 
-    write!(f, "{}", feed).unwrap();
+    write!(f, "{}", rss).unwrap();
     f.sync_all().unwrap();
 }
 
@@ -72,7 +75,7 @@ fn get_data_link(filename: &str, namespaced: bool) -> String{
     }
 }
 
-fn get_feed_item(cast: &CastItem) -> rss::Item {
+fn get_rss_item(cast: &CastItem) -> rss::Item {
     println!("\tget feed item for cast: {:?}", cast);
     let options = Options::from_args();
 
@@ -100,7 +103,7 @@ fn get_feed_item(cast: &CastItem) -> rss::Item {
         .unwrap()
 }
 
-fn get_channel() -> rss::Channel {
+fn get_rss() -> rss::Channel {
     let metadata = get_metadata();
 
     let mut itunes_extension = ITunesChannelExtension::default();
@@ -132,26 +135,6 @@ fn get_channel() -> rss::Channel {
         .language(metadata.language)
         .build()
         .unwrap()
-}
-
-fn get_cast_data() -> Vec<CastItem> {
-    let options = Options::from_args();
-
-    let file = fs::File::open(format!("{}/casts.json", options.config_dir))
-        .expect("casts file should open read only");
-
-    let json: serde_json::Value = serde_json::from_reader(file)
-        .expect("casts file should be proper JSON");
-    
-    json.as_array()
-        .expect("casts file should contain JSON array")
-        .iter()
-        .map(|data| {
-            let cast: CastItem = serde_json::from_value(data.clone())
-                .expect("cast item should be in correct format");
-            cast
-        })
-        .collect()
 }
 
 fn get_metadata() -> Metadata{
