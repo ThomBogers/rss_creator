@@ -7,9 +7,8 @@
 - Common
   - Try to use basic auth, and use user:pass@url in feed
   - Move `casts.json`, `channel.json`, `feed.json` strings to constants in lib?
-  - Move helper functions into mod in lib?
-    - https://stackoverflow.com/questions/22596920/split-a-module-across-several-files#22597760
   - Use getters/setters for structs?
+    - try https://docs.rs/derive_builder/0.7.2/derive_builder/
   - Find out how to set 'global' values for file
     - https://crates.io/crates/lazy_static
 - get_data

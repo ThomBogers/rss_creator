@@ -1,15 +1,9 @@
-use std::{
-    collections::HashMap,
-    fs, 
-    io::prelude::*, 
-};
+use std::{fs, io::prelude::*};
 
-use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
+use rss_creator::{cast::Cast, rss::{Rss, RssSettings}, Options, FileNames};
 
-use serde::{Serialize, Deserialize};
 use serde_json;
-
-use rss_creator::{cast::{CastItem, Cast} ,Options};
+use serde::{Serialize, Deserialize};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -30,116 +24,47 @@ struct Metadata {
 
 fn main() {
     let options = Options::from_args();
+    let metadata = get_metadata(&options.config_dir);
+
     println!("Starting rss builder!");
 
-    let cast = Cast::from_file(&format!("{}/casts.json", options.config_dir));
-    let casts = cast.items();
+    let cast = Cast::from_file(&format!("{}/{}", options.config_dir, FileNames::casts()));
 
-    let rss_items: Vec<rss::Item> = casts
-        .iter()
-        .map(get_rss_item)
-        .collect();
+    let rss_settings = RssSettings {
+        url: metadata.url,
+        namespace: metadata.namespace,
+        category: metadata.category,
+        language: metadata.language,
+        title: metadata.title,
+        description: metadata.description,
+        author: metadata.author,
+        email: metadata.email,
+        api_key: metadata.api_key,
+        explicit: metadata.explicit,
+        hide_from_store: metadata.hide_from_store,
+        data_dir: options.data_dir
+    };
 
-    let mut rss = get_rss();
-    rss.set_items(rss_items);
+    let xml = Rss::default(rss_settings)
+        .set_cast(cast)
+        .build()
+        .to_string();
 
-    let xml = rss.to_string();
-    write_rss(&xml);
+    write_rss(&xml, &options.feed_dir);
     println!("Done");
 }
 
-fn write_rss(rss: &str) {
-    let options = Options::from_args();
+fn write_rss(rss: &str, feed_dir: &str) {
     
-    let mut f = fs::File::create(format!("{}/rss.xml", options.feed_dir))
-        .expect("Could not create rss.xml");
+    let mut f = fs::File::create(format!("{}/{}", feed_dir, FileNames::rss()))
+        .expect("Could not create rss files");
 
     write!(f, "{}", rss).unwrap();
     f.sync_all().unwrap();
 }
 
-fn get_data_link(filename: &str, namespaced: bool) -> String{
-    let metadata = get_metadata();
-
-    let url = if namespaced {
-        format!("{}/{}", metadata.url, metadata.namespace)
-    } else {
-        metadata.url
-    };
-
-    let api_key = &metadata.api_key;
-    if api_key.len() > 0 {
-        format!("{}/{}?auth={}", url, filename, api_key)
-    } else {
-        format!("{}/{}", url, filename)
-    }
-}
-
-fn get_rss_item(cast: &CastItem) -> rss::Item {
-    println!("\tget feed item for cast: {:?}", cast);
-    let options = Options::from_args();
-
-    let file_meta = fs::metadata(format!("{}/{}", options.data_dir, cast.filename))
-        .expect(&format!("Could not open file {}/{}", options.data_dir, cast.filename));
-
-    let file_size = file_meta.len();
-
-    let enclosure = rss::EnclosureBuilder::default()
-        .url(get_data_link(&cast.filename, true))
-        .length(format!("{}", file_size))
-        .mime_type("audio/mpeg")
-        .build()
-        .unwrap();
-
-    rss::ItemBuilder::default()
-        .link(get_data_link(&cast.filename, true))
-        .title(cast.title.clone())
-        .author(cast.author.clone())
-        .pub_date(cast.created_at.clone())
-        .enclosure(enclosure)
-        .itunes_ext(rss::extension::itunes::ITunesItemExtension::default())
-        .dublin_core_ext(rss::extension::dublincore::DublinCoreExtension::default())
-        .build()
-        .unwrap()
-}
-
-fn get_rss() -> rss::Channel {
-    let metadata = get_metadata();
-
-    let mut itunes_extension = ITunesChannelExtension::default();
-    itunes_extension.set_author(format!("{}", metadata.author));
-    itunes_extension.set_image(get_data_link(&format!("{}.png", metadata.namespace), false));
-    itunes_extension.set_block( if metadata.hide_from_store {"Yes".to_string()} else {"".to_string()});
-    itunes_extension.set_explicit( if metadata.explicit {"Yes".to_string()} else {"No".to_string()});
-
-    let category = rss::extension::itunes::ITunesCategoryBuilder::default()
-        .text(metadata.category)
-        .build()
-        .expect("should be a valid itunes category");
-    itunes_extension.set_categories(vec!(category));
-
-    let mut owner = ITunesOwner::default();
-    owner.set_name(format!("{}", metadata.author));
-    owner.set_email(format!("{}", metadata.email));
-    itunes_extension.set_owner(owner);
-
-    let mut namespaces: HashMap<String, String> = HashMap::new();
-    namespaces.insert("itunes".to_string(), "http://www.itunes.com/dtds/podcast-1.0.dtd".to_string());
-    
-    rss::ChannelBuilder::default()
-        .title(metadata.title)
-        .description(metadata.description)
-        .link(get_data_link(&format!("{}.xml", metadata.namespace), false))
-        .itunes_ext(itunes_extension)
-        .namespaces(namespaces)
-        .language(metadata.language)
-        .build()
-        .unwrap()
-}
-
-fn get_metadata() -> Metadata{
-    let options = Options::from_args();
-    let file = fs::File::open(format!("{}/feed.json", options.config_dir))
+fn get_metadata(config_dir: &str) -> Metadata{
+    let file = fs::File::open(format!("{}/{}", config_dir, FileNames::feed()))
         .expect("file should open read only");
     
     let meta: Metadata = serde_json::from_reader(file)

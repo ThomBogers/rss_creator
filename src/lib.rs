@@ -16,6 +16,26 @@ pub struct Options {
     pub feed_dir: String
 }
 
+pub struct FileNames {
+}
+
+impl FileNames {
+    pub fn casts() -> String {
+        "casts.json".to_string()
+    }
+    pub fn channel() -> String {
+        "channel.json".to_string()
+    }
+    pub fn feed() -> String {
+        "feed.json".to_string()
+    }
+    pub fn rss() -> String {
+        "rss.xml".to_string()
+    }
+}
+
+
 pub mod channel;
 pub mod feed;
 pub mod cast;
+pub mod rss;

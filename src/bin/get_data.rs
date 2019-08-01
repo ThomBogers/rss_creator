@@ -1,9 +1,9 @@
 use std::fs;
 
-use serde::{Serialize, Deserialize};
-use serde_json;
+use rss_creator::{channel::Channel, feed::{Feed, FeedItem}, cast::{Cast, CastItem} ,Options, FileNames};
 
-use rss_creator::{channel::Channel, feed::{Feed, FeedItem}, cast::{Cast, CastItem} ,Options};
+use serde_json;
+use serde::{Serialize, Deserialize};
 use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
@@ -16,12 +16,12 @@ struct Metadata {
 fn main() {
     println!("Starting data retrieval");
     let options = Options::from_args();
-    let metadata = get_metadata();
+    let metadata = get_metadata(&options.config_dir);
 
     let channel = Channel::from_string(&metadata.channel_id);
     let feed    = Feed::from_channel(&channel);
 
-    let mut cast = Cast::from_file(&format!("{}/casts.json", options.config_dir));
+    let mut cast = Cast::from_file(&format!("{}/{}", options.config_dir, FileNames::casts()));
     let mut casts = cast.items();
 
     let feed: Vec<FeedItem> = feed
@@ -46,14 +46,12 @@ fn main() {
         });
 
     cast.set_items(casts);
-    cast.write(&format!("{}/casts.json", options.config_dir));
+    cast.write(&format!("{}/{}", options.config_dir, FileNames::casts()));
     println!("Done");
 }
 
-fn get_metadata() -> Metadata{
-    let options = Options::from_args();
-
-    let file = fs::File::open(format!("{}/channel.json", options.config_dir))
+fn get_metadata(config_dir: &str) -> Metadata{
+    let file = fs::File::open(format!("{}/{}", config_dir, FileNames::channel()))
         .expect("file should open read only");
     
     let meta: Metadata = serde_json::from_reader(file)
