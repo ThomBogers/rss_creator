@@ -1,26 +1,4 @@
-use serde::{Serialize, Deserialize};
-
 use structopt::StructOpt;
-
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-pub struct FeedItem {
-    pub id: String,
-    pub author: String,
-    pub title: String,
-    pub link: String,
-    pub created_at: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-pub struct Cast {
-    pub id: String,
-    pub author: String,
-    pub title: String,
-    pub filename: String,
-    pub created_at: String
-}
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "rss_creator", about = "Create a podcast rss feed based on a youtube channe")]
@@ -37,3 +15,27 @@ pub struct Options {
     #[structopt(short = "f", long = "feed", default_value = "./")]
     pub feed_dir: String
 }
+
+pub struct FileNames {
+}
+
+impl FileNames {
+    pub fn casts() -> String {
+        "casts.json".to_string()
+    }
+    pub fn channel() -> String {
+        "channel.json".to_string()
+    }
+    pub fn feed() -> String {
+        "feed.json".to_string()
+    }
+    pub fn rss() -> String {
+        "rss.xml".to_string()
+    }
+}
+
+
+pub mod channel;
+pub mod feed;
+pub mod cast;
+pub mod rss;
