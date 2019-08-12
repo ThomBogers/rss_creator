@@ -1,18 +1,19 @@
 # Rss feed creator based on files with metadata in json
 
 ## todo
-- Nginx
+- Webserver
   - Fix streaming by enabling content_disposition,accept_ranges,206
   - Add nginx template when it is fully working
+  - Try hosting using [caddy](https://caddyserver.com/tutorial/caddyfile)
 - Common
   - Try to use basic auth, and use user:pass@url in feed
   - Use getters/setters for structs?
-    - try https://docs.rs/derive_builder/0.7.2/derive_builder/
+    - try [derive builder](https://docs.rs/derive_builder/0.7.2/derive_builder/)
   - Find out how to set 'global' values for file
-    - https://crates.io/crates/lazy_static
+    - try [lazy static](https://crates.io/crates/lazy_static)
+  - Convert unrecoverable errors in lib to result values
 - get_data
   - filter doesn't seem to fully work
-
 ## Data format
 A dir named `data` containing a file named `channel.json` and `feed.json`
 
@@ -45,6 +46,6 @@ The file named `feed.json` should have the following content:
 
 
 ## Validate the feed
-- https://podba.se/validate/
-- http://castfeedvalidator.com/find
-- https://validator.w3.org/feed/check.cgi
+- [podba.se](https://podba.se/validate/)
+- [castfeedvalidator.com](http://castfeedvalidator.com/find)
+- [validator.w3.org](https://validator.w3.org/feed/check.cgi)
