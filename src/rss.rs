@@ -3,10 +3,7 @@ use crate::cast::{CastItem, Cast};
 use rss::extension::itunes::{ITunesChannelExtension, ITunesOwner};
 use rss::ChannelBuilder;
 
-use std::{
-    collections::HashMap,
-    fs,
-};
+use std::{ collections::HashMap, fs};
 
 pub struct Rss {
     cast: Option<Cast>,
@@ -14,6 +11,7 @@ pub struct Rss {
     pub settings: RssSettings,
 }
 
+#[derive(Debug)]
 pub struct RssSettings {
     pub author: String,
     pub namespace: String,
@@ -27,25 +25,6 @@ pub struct RssSettings {
     pub hide_from_store: bool,
     pub explicit: bool,
     pub data_dir: String,
-}
-
-impl RssSettings {
-    pub fn copy(&self) -> RssSettings {
-        RssSettings {
-            author: format!("{}", self.author),
-            namespace: format!("{}", self.namespace),
-            category: format!("{}", self.category),
-            email: format!("{}", self.email),
-            title: format!("{}", self.title),
-            description: format!("{}", self.description),
-            language: format!("{}", self.language),
-            url: format!("{}", self.url),
-            api_key: format!("{}", self.api_key),
-            hide_from_store: self.hide_from_store,
-            explicit: self.explicit,
-            data_dir: format!("{}", self.data_dir),
-        }
-    }
 }
 
 fn get_data_link(filename: &str, settings: &RssSettings, namespaced: bool) -> String{
@@ -76,7 +55,7 @@ fn item_from_cast(settings: &RssSettings, cast: &CastItem) -> rss::Item {
         .length(format!("{}", file_size))
         .mime_type("audio/mpeg")
         .build()
-        .unwrap();
+        .expect(&format!("Could not build rss enclosure {:?}", cast));
 
     rss::ItemBuilder::default()
         .link(get_data_link(&cast.filename, settings, true))
@@ -87,7 +66,7 @@ fn item_from_cast(settings: &RssSettings, cast: &CastItem) -> rss::Item {
         .itunes_ext(rss::extension::itunes::ITunesItemExtension::default())
         .dublin_core_ext(rss::extension::dublincore::DublinCoreExtension::default())
         .build()
-        .unwrap()
+        .expect(&format!("Could not build rss item {:?}", cast))
 }
 
 impl Rss {
@@ -120,7 +99,7 @@ impl Rss {
             .namespaces(namespaces)
             .language(format!("{}", &settings.language))
             .build()
-            .unwrap();
+            .expect(&format!("Could not build rss channel {:?}", settings));
             
         Rss {settings, channel, cast: None}
     }
@@ -131,15 +110,12 @@ impl Rss {
     }
 
     pub fn build(mut self) -> Rss {
-
-        let settings = self.settings.copy();
-
         let res: Option<Vec<rss::Item>> = self.cast
             .as_ref()
             .and_then(|chan| {
                 let items = chan.items()
                     .iter()
-                    .map(|item| { return item_from_cast(&settings, item)})
+                    .map(|item| { return item_from_cast(&self.settings, item)})
                     .collect();
                 Some(items)
             });

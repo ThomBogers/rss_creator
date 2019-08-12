@@ -7,11 +7,11 @@ pub struct Channel {
 
 pub fn id_from_url(url: &str) -> &str {
     Regex::new(r"\?v=(.*)")
-        .unwrap()
+        .expect("Could not create regex for channel id")
         .captures(url)
-        .expect("FeedItem url should match ?v=<id> pattern")
+        .expect("Could not match url to to pattern ?v=<id>")
         .get(1)
-        .expect("FeedItem url should match ?v=<id> pattern")
+        .expect("Could not get id from the pattern match")
         .as_str()
 }
 

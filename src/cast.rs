@@ -17,6 +17,7 @@ pub struct CastItem {
     pub created_at: String
 }
 
+#[derive(Debug)]
 impl CastItem {
     pub fn from_feed_item(item: &FeedItem) -> CastItem {
         CastItem{
@@ -29,7 +30,7 @@ impl CastItem {
     }
 }
 
-
+#[derive(Debug)]
 pub struct Cast {
     items: Vec<CastItem>,
 }
@@ -59,13 +60,16 @@ impl Cast {
 
     pub fn write(&self, path: &str) {
         let json = serde_json::to_string_pretty(&self.items)
-            .unwrap();
+            .expect(&format!("Could not serialize to json {:?}", &self));
 
         let mut f = fs::File::create(path)
-            .expect("Could not create casts.json");
+            .expect(&format!("Could not create casts file {}", path));
 
-        write!(f, "{}", json).unwrap();
-        f.sync_all().unwrap();
+        write!(f, "{}", json)
+            .expect(&format!("Could not write to casts file {}", path));
+        
+        f.sync_all()
+            .expect("Could not sync filesystem");
     }
 
     pub fn items(&self) -> Vec<CastItem> {

@@ -55,12 +55,16 @@ fn main() {
 }
 
 fn write_rss(rss: &str, feed_dir: &str) {
+    let path = &format!("{}/{}", feed_dir, FileNames::rss());
     
-    let mut f = fs::File::create(format!("{}/{}", feed_dir, FileNames::rss()))
-        .expect("Could not create rss files");
+    let mut f = fs::File::create(path)
+        .expect(&format!("Could not create rss file {}", path));
 
-    write!(f, "{}", rss).unwrap();
-    f.sync_all().unwrap();
+    write!(f, "{}", rss)
+        .expect(&format!("Could not write to rss file {}", path));
+
+    f.sync_all()
+        .expect("Could not sync filesystem");
 }
 
 fn get_metadata(config_dir: &str) -> Metadata{

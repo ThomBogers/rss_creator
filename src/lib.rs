@@ -16,8 +16,7 @@ pub struct Options {
     pub feed_dir: String
 }
 
-pub struct FileNames {
-}
+pub struct FileNames {}
 
 impl FileNames {
     pub fn casts() -> String {

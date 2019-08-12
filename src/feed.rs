@@ -54,12 +54,12 @@ pub struct Feed {
 impl Feed {
     pub fn from_channel(channel: &Channel) -> Feed {
         let data = reqwest::get(&channel.get_url())
-            .unwrap()
+            .expect(&format!("Could not fetch url {:?}", channel))
             .text()
-            .expect("The feed for the channel should be possible to download");
+            .expect(&format!("Could not get text content from url {:?}", channel));
 
         let feed = AtomFeed::from_str(&data)
-            .expect("The feed should be parsable as a atom feed");
+            .expect(&format!("Could not parse response as an atom feed {}", &data));
 
         let items = feed
             .entries()
