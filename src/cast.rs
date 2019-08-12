@@ -17,7 +17,6 @@ pub struct CastItem {
     pub created_at: String
 }
 
-#[derive(Debug)]
 impl CastItem {
     pub fn from_feed_item(item: &FeedItem) -> CastItem {
         CastItem{
