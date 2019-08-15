@@ -32,7 +32,7 @@ fn main() {
 
     let rss_settings = RssSettings {
         url: metadata.url,
-        namespace: metadata.namespace,
+        namespace: (&metadata.namespace).to_string(),
         category: metadata.category,
         language: metadata.language,
         title: metadata.title,
@@ -50,12 +50,12 @@ fn main() {
         .build()
         .to_string();
 
-    write_rss(&xml, &options.feed_dir);
+    write_rss(&xml, &options.feed_dir, &metadata.namespace);
     println!("Done");
 }
 
-fn write_rss(rss: &str, feed_dir: &str) {
-    let path = &format!("{}/{}", feed_dir, FileNames::rss());
+fn write_rss(rss: &str, feed_dir: &str, namespace: &str) {
+    let path = &format!("{}/{}.xml",feed_dir, namespace);
     
     let mut f = fs::File::create(path)
         .expect(&format!("Could not create rss file {}", path));

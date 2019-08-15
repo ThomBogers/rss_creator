@@ -28,9 +28,6 @@ impl FileNames {
     pub fn feed() -> String {
         "feed.json".to_string()
     }
-    pub fn rss() -> String {
-        "rss.xml".to_string()
-    }
 }
 
 
