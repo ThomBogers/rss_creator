@@ -4,8 +4,9 @@ use serde::{Serialize, Deserialize};
 use atom_syndication::Feed as AtomFeed;
 use reqwest;
 use std::{
-    process::Command,
+    process::{Command, Stdio},
     str::FromStr,
+    io::{BufRead,BufReader}
 };
 
 #[derive(Serialize, Deserialize)]
@@ -19,10 +20,13 @@ pub struct FeedItem {
 }
 
 impl FeedItem {
-    pub fn get_audio(&self, data_dir: &str) -> Result<(), i32> {
+    /// succes=true if the file has been downloaded,
+    /// success=false if it is not possible to download the file
+    /// Error if an error occurred during the retrieval
+    pub fn get_audio(&self, data_dir: &str) -> Result<bool, i32> {
         println!("Downloading id: {}", self.id);
 
-        let output = Command::new("youtube-dl")
+        let mut output = Command::new("youtube-dl")
             .arg("--extract-audio")
             .arg("--audio-format")
             .arg("m4a")
@@ -31,7 +35,9 @@ impl FeedItem {
             .arg("--output")
             .arg(format!("{}/{}.%(ext)s",data_dir, self.id))
             .arg(&self.link)
-            .output()
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
             .expect("Failed to download the file");
 
         // let output = Command::new("echo")
@@ -39,8 +45,27 @@ impl FeedItem {
         //     .output()
         //     .expect("Failed echo");
 
-        match output.status.code() {
-            Some(0) => Ok(()),
+        let mut audio_available = true;
+
+        if let Some(ref mut stderr) = output.stderr {
+            for line in BufReader::new(stderr).lines() {
+                let line = line.unwrap();
+                if line.contains("This live event will begin in") {
+                    audio_available=false;
+                }
+                println!("[stderr] {}", line);
+            }
+        }        
+        let status = output
+            .wait()
+            .expect("Command wasn't running");
+
+        if !audio_available {
+            return Ok(audio_available);
+        }
+
+        match status.code() {
+            Some(0) => Ok(audio_available),
             Some(n) => Err(n),
             None => Err(-1)
         }

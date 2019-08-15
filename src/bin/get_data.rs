@@ -40,9 +40,12 @@ fn main() {
     feed
         .iter()
         .for_each(|item| {
-            item.get_audio(&options.data_dir)
+            let succes = item.get_audio(&options.data_dir)
                 .expect("Should be able to download the file");
-            casts.push(CastItem::from_feed_item(item));
+            
+            if succes {
+                casts.push(CastItem::from_feed_item(&item));
+            }
         });
 
     cast.set_items(casts);
